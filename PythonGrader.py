@@ -45,8 +45,8 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_POST(self):
         body_len = int(self.headers.getheader('content-length', 0))
         body_content = self.rfile.read(body_len)
-        problem_name, student_response = get_info(body_content)
-        result = grade(problem_name, student_response)
+        problem, student_response = get_info(body_content)
+        result = grade(problem, student_response)
         self.send_response(200)
         self.end_headers()
         self.wfile.write(result)
@@ -54,11 +54,10 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
 def grade(problem, student_response):
     randfilename = randgen()
-    submit_dir = 'submission/'
 
     # Create python file to be tested from student's submitted program
     program_name = "Program{0}_{1}.py".format(problem['problem_name'], randfilename)
-    source_file = open(submit_dir + program_name, 'w')
+    source_file = open(program_name, 'w')
     source_file.write(student_response)
     source_file.close()
 
@@ -66,7 +65,7 @@ def grade(problem, student_response):
     message = "Good job!!!"
     
     # Use pytest to test the student's submitted program with the help of the appropriate test runner 
-    p = subprocess.Popen(["py.test", "{0}_test_runner.py".format(problem['problem_name']), submit_dir + program_name, "-v"],
+    p = subprocess.Popen(["py.test", "{0}_test_runner.py".format(problem['problem_name']), program_name, "-v"],
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     out, err = p.communicate()
